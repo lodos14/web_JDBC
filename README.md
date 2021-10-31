@@ -35,7 +35,7 @@
         String sql = "SELECT * FROM NOTICE";
 
         Class.forName("oracle.jdbc.driver.OracleDriver");
-        Connection con = DriverManager.getConnection(url, "newlec","tkwl1414");
+        Connection con = DriverManager.getConnection(url, "ID","PWD");
         Statement st = con.createStatement();
         ResultSet rs = st.executeQuery(sql);
 
@@ -79,4 +79,229 @@ String sql = "SELECT * FROM NOTICE WHERE HIT >= 10"; 처럼 SQL 구문을 잘 �
 - 트랜잭션이 성공적으로 완료된 트랜잭션의 결과는 시스템이 고장 나더라도 영구적으로 반영되어야 한다.
 
 출처: https://junghn.tistory.com/entry/DataBase기초-트랜잭션이란-무엇인가-Transaction [코딩 시그널]
+
+## 4. 데이터 입력하기와 PreparedStatement
+
+오라클 tool에서 쿼리문을 복사해서 이클립스에 붙여넣으면 아래 처럼 나오는데
+
+      String sql = "INSERT INTO notice (" + 
+            "    writer_id," + 
+            "    content," + 
+            "    title" + 
+            ") VALUES (" + 
+            "    'qqq'," + 
+            "    'test content'," + 
+            "    'test'" + 
+            ")";
+            
+ 값을 변수로 바꾸고 쿼리문을 변경하면 
  
+       String title = "";
+
+       String sql = "INSERT INTO notice (" + 
+                  "    writer_id," + 
+                  "    content," + 
+                  "    title" + 
+                  ") VALUES (" + 
+                  "    'qqq'," + 
+                  "    'test content'," + 
+                  "    '"+title+"'" +     // 하지만 이렇게 바꾸면 좀 복잡하다.
+                  ")";
+                  
+ 이 때 좀 편할 수 있게 사용하는 기능이 preparedStatement
+ 
+      String writerId = "qqq";
+      String content = "hahahaha";
+      String title = "TEST2";
+
+      String url = "jdbc:oracle:thin:@localhost:1521/xepdb1"; 
+      String sql = "INSERT INTO NOTICE (" + 
+                  "    writer_id," + 
+                  "    content," + 
+                  "    title" + 
+                  ") VALUES (?,?,?)";  // 변수는 ?로 
+
+      Class.forName("oracle.jdbc.driver.OracleDriver");
+      Connection con = DriverManager.getConnection(url, "ID","PWD");
+      //Statement st = con.createStatement(); 
+      //ResultSet rs = st.executeQuery(sql); // 기존은 실행하면서 문장을 전달
+      PreparedStatement st = con.prepareStatement(sql); // 실행하기 전에 문장을 준비
+      
+      st.setString(1, writerId); // index 1부터 시작
+      st.setString(2, content);
+      st.setString(3, title);
+
+      int result = st.executeUpdate(); // insert 성공시 반환 값은 1
+ 
+ ## 5. 데이터 수정하기 및 삭제하기
+ 
+ ### 5.1 수정하기
+ 
+      String writerId = "qqq";
+      String content = "hahahaha33";
+      String title = "TEST3";
+      int id = 10;
+
+      String url = "jdbc:oracle:thin:@localhost:1521/xepdb1"; 
+      String sql = "UPDATE NOTICE " + 
+            "SET" + 
+            "    TITLE = ?," + 
+            "    CONTENT = ?" + 
+            "WHERE ID = ?";
+
+      Class.forName("oracle.jdbc.driver.OracleDriver");
+      Connection con = DriverManager.getConnection(url, "","");
+
+      PreparedStatement st = con.prepareStatement(sql); 
+      st.setString(1, title); // index 1부터 시작
+      st.setString(2, content); 
+      st.setInt(3, id);
+
+      int result = st.executeUpdate(); 
+
+      System.out.println(result); // 1
+
+      st.close();
+      con.close();
+      
+### 5.2 삭제하기 
+      
+      int id = 10;
+
+      String url = "jdbc:oracle:thin:@localhost:1521/xepdb1"; 
+      String sql = "DELETE NOTICE WHERE ID = ?";
+
+      Class.forName("oracle.jdbc.driver.OracleDriver");
+      Connection con = DriverManager.getConnection(url, "","");
+
+      PreparedStatement st = con.prepareStatement(sql); 
+      st.setInt(1, id); // index 1부터 시작
+
+      int result = st.executeUpdate(); 
+
+      System.out.println(result); // 1
+
+      st.close();
+      con.close();
+      
+## 6. CRUD를 담당하는 NoticeService 생성
+
+### 6.1 Notice 객체 만들기
+
+독립적인 패키기에 Notice 객체 만들기 
+
+      package com.newlecture.app.entity;
+
+      import java.util.Date;
+
+      public class Notice {
+
+            private int id;        // 노출되지 않도록 private
+            private String title;
+            private String writerid;
+            private Date regDate;
+            private String content;
+            private int hit;
+
+            public Notice (){
+
+            }
+
+            // Source -> constructor using fields 로 만드는 기능 있음
+            public Notice(int id, String title, String writerid, Date regDate, String content, int hit) {
+
+                  this.id = id;
+                  this.title = title;
+                  this.writerid = writerid;
+                  this.regDate = regDate;
+                  this.content = content;
+                  this.hit = hit;
+
+            }
+
+            // Source -> generate Getters and Setters 로 한 번에 만들거나 만들기
+            public int getId() {
+                  return id;
+            }
+            public void setId(int id) {
+                  this.id = id;
+            }
+            public String getTitle() {
+                  return title;
+            }
+            public void setTitle(String title) {
+                  this.title = title;
+            }
+            public String getWriterid() {
+                  return writerid;
+            }
+            public void setWriterid(String writerid) {
+                  this.writerid = writerid;
+            }
+            public Date getRegDate() {
+                  return regDate;
+            }
+            public void setRegDate(Date regDate) {
+                  this.regDate = regDate;
+            }
+            public String getContent() {
+                  return content;
+            }
+            public void setContent(String content) {
+                  this.content = content;
+            }
+            public int getHit() {
+                  return hit;
+            }
+            public void setHit(int hit) {
+                  this.hit = hit;
+            }
+      }
+      
+### 6.2 NoticeService
+
+(독립적인 패키지에 만들기)
+
+      public class NoticeService {
+
+            // 게시물 리스트
+            public List<Notice> getList() throws ClassNotFoundException, SQLException {
+
+                  String url = "jdbc:oracle:thin:@localhost/xepdb1"; 
+                  String sql = "SELECT * FROM NOTICE WHERE HIT >= 1";
+
+                  Class.forName("oracle.jdbc.driver.OracleDriver");
+                  Connection con = DriverManager.getConnection(url, "ohji","tkwl1414");
+                  Statement st = con.createStatement();
+                  ResultSet rs = st.executeQuery(sql);
+
+                  List<Notice> list = new ArrayList<Notice>(); // 게시물 객체를 담을 리스트 생성
+
+                  while (rs.next()) { 
+                        int id = rs.getInt("id");
+                        String title = rs.getString("title");
+                        String writerId = rs.getString("writer_id");
+                        Date regDate = rs.getDate("regdate");
+                        String content = rs.getString("content");
+                        int hit = rs.getInt("hit");
+
+                        Notice notice = new Notice( // 게시물 객체 생성
+                                          id,
+                                          title,
+                                          writerId,
+                                          regDate,
+                                          content,
+                                          hit
+                                    );
+
+                        list.add(notice); // 리스트에 게시물 객체 추가
+
+                  }
+
+                  rs.close();
+                  st.close();
+                  con.close();
+
+                  return list;
+            }
+      }
