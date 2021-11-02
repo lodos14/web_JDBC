@@ -262,130 +262,130 @@ String sql = "SELECT * FROM NOTICE WHERE HIT >= 10"; 처럼 SQL 구문을 잘 �
 
 NoticeService (독립적인 패키지에 만들기)
 
-package com.newlecture.app.service;
+	package com.newlecture.app.service;
 
-import com.newlecture.app.entity.Notice;
+	import com.newlecture.app.entity.Notice;
 
-public class NoticeService {
-	
-	private String url = "jdbc:oracle:thin:@localhost/xepdb1"; 
-	private String uid = "ohji";
-	private String pwd = "tkwl1414";
-	private String driver = "oracle.jdbc.driver.OracleDriver";
+	public class NoticeService {
 
-	public List<Notice> getList() throws ClassNotFoundException, SQLException {
-		
-		String sql = "SELECT * FROM NOTICE WHERE HIT >= 1";
-		
-		Class.forName(driver); 
-		Connection con = DriverManager.getConnection(url, uid, pwd);
-		Statement st = con.createStatement();
-		ResultSet rs = st.executeQuery(sql);
-		
-		List<Notice> list = new ArrayList<Notice>(); // 게시물 객체를 담을 리스트 생성
-		
-		while (rs.next()) { 
-			int id = rs.getInt("id");
-			String title = rs.getString("title");
-			String writerId = rs.getString("writer_id");
-			Date regDate = rs.getDate("regdate");
-			String content = rs.getString("content");
-			int hit = rs.getInt("hit");
-			
-			Notice notice = new Notice( // 게시물 객체 생성
-						id,
-						title,
-						writerId,
-						regDate,
-						content,
-						hit
-					);
-			
-			list.add(notice); // 리스트에 게시물 객체 추가
-			
+		private String url = "jdbc:oracle:thin:@localhost/xepdb1"; 
+		private String uid = "ohji";
+		private String pwd = "tkwl1414";
+		private String driver = "oracle.jdbc.driver.OracleDriver";
+
+		public List<Notice> getList() throws ClassNotFoundException, SQLException {
+
+			String sql = "SELECT * FROM NOTICE WHERE HIT >= 1";
+
+			Class.forName(driver); 
+			Connection con = DriverManager.getConnection(url, uid, pwd);
+			Statement st = con.createStatement();
+			ResultSet rs = st.executeQuery(sql);
+
+			List<Notice> list = new ArrayList<Notice>(); // 게시물 객체를 담을 리스트 생성
+
+			while (rs.next()) { 
+				int id = rs.getInt("id");
+				String title = rs.getString("title");
+				String writerId = rs.getString("writer_id");
+				Date regDate = rs.getDate("regdate");
+				String content = rs.getString("content");
+				int hit = rs.getInt("hit");
+
+				Notice notice = new Notice( // 게시물 객체 생성
+							id,
+							title,
+							writerId,
+							regDate,
+							content,
+							hit
+						);
+
+				list.add(notice); // 리스트에 게시물 객체 추가
+
+			}
+
+			rs.close();
+			st.close();
+			con.close();
+
+			return list;
+
 		}
-		
-		rs.close();
-		st.close();
-		con.close();
-		
-		return list;
-	
+
+		public int insert(Notice notice) throws SQLException, ClassNotFoundException { // 게시물 객체가 매개변수
+
+			String writerId = notice.getWriterid();
+			String content = notice.getContent();
+			String title = notice.getTitle();
+
+			String sql = "INSERT INTO NOTICE (" + 
+					"    writer_id," + 
+					"    content," + 
+					"    title" + 
+					") VALUES (?,?,?)";
+
+			Class.forName(driver);
+			Connection con = DriverManager.getConnection(url,uid, pwd);
+			PreparedStatement st = con.prepareStatement(sql); 
+			st.setString(1, writerId); 
+			st.setString(2, content);
+			st.setString(3, title);
+
+			int result = st.executeUpdate(); 
+
+			st.close();
+			con.close();
+
+			return result;
+		}
+
+		public int update(Notice notice) throws SQLException, ClassNotFoundException {
+
+			String content = notice.getContent();
+			String title = notice.getTitle();
+			int id = notice.getId();
+
+			String sql = "UPDATE NOTICE " + 
+					"SET" + 
+					"    TITLE = ?," + 
+					"    CONTENT = ?" + 
+					"WHERE ID = ?";
+
+			Class.forName(driver);
+			Connection con = DriverManager.getConnection(url, uid, pwd);
+
+			PreparedStatement st = con.prepareStatement(sql); 
+			st.setString(1, title); 
+			st.setString(2, content); 
+			st.setInt(3, id);
+
+			int result = st.executeUpdate(); 
+
+			st.close();
+			con.close();
+
+			return result;
+		}
+
+		public int delete(int id) throws SQLException, ClassNotFoundException {
+
+			String sql = "DELETE NOTICE WHERE ID = ?";
+
+			Class.forName(driver);
+			Connection con = DriverManager.getConnection(url, uid, pwd);
+
+			PreparedStatement st = con.prepareStatement(sql); 
+			st.setInt(1, id); 
+
+			int result = st.executeUpdate(); 
+
+			st.close();
+			con.close();
+
+			return result;
+		}
 	}
-	
-	public int insert(Notice notice) throws SQLException, ClassNotFoundException { // 게시물 객체가 매개변수
-		
-		String writerId = notice.getWriterid();
-		String content = notice.getContent();
-		String title = notice.getTitle();
-		
-		String sql = "INSERT INTO NOTICE (" + 
-				"    writer_id," + 
-				"    content," + 
-				"    title" + 
-				") VALUES (?,?,?)";
-		
-		Class.forName(driver);
-		Connection con = DriverManager.getConnection(url,uid, pwd);
-		PreparedStatement st = con.prepareStatement(sql); 
-		st.setString(1, writerId); 
-		st.setString(2, content);
-		st.setString(3, title);
-		
-		int result = st.executeUpdate(); 
-		
-		st.close();
-		con.close();
-		
-		return result;
-	}
-	
-	public int update(Notice notice) throws SQLException, ClassNotFoundException {
-		
-		String content = notice.getContent();
-		String title = notice.getTitle();
-		int id = notice.getId();
-		
-		String sql = "UPDATE NOTICE " + 
-				"SET" + 
-				"    TITLE = ?," + 
-				"    CONTENT = ?" + 
-				"WHERE ID = ?";
-		
-		Class.forName(driver);
-		Connection con = DriverManager.getConnection(url, uid, pwd);
-		
-		PreparedStatement st = con.prepareStatement(sql); 
-		st.setString(1, title); 
-		st.setString(2, content); 
-		st.setInt(3, id);
-		
-		int result = st.executeUpdate(); 
-		
-		st.close();
-		con.close();
-		
-		return result;
-	}
-	
-	public int delete(int id) throws SQLException, ClassNotFoundException {
-		
-		String sql = "DELETE NOTICE WHERE ID = ?";
-		
-		Class.forName(driver);
-		Connection con = DriverManager.getConnection(url, uid, pwd);
-		
-		PreparedStatement st = con.prepareStatement(sql); 
-		st.setInt(1, id); 
-		
-		int result = st.executeUpdate(); 
-		
-		st.close();
-		con.close();
-		
-		return result;
-	}
-}
 
 ## 7. 사용자 인터페이스 붙이기(console)
 
